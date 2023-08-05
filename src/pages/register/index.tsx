@@ -11,12 +11,13 @@ import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import { deleteCookie, getCookie, setCookie } from "cookies-next";
 import { useRouter } from "next/router";
+import { useSession, signIn, signOut } from "next-auth/react"
 
 const jar = new CookieJar(); // allow to retrieve session cookie
 const client = wrapper(axios.create({ jar: jar, withCredentials: true }))
 
 
-const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min)
+const baseUrl = "http://88.198.150.195:8099/AUTH-SERVICE"
 
 
 type RegisterResponse = {
@@ -28,22 +29,36 @@ type RegisterResponse = {
 
 type ErrorResponse = {
 
-    error: string,
+    error: string, // user already exists, too many request, 
     message: string,
 }
 
 const RegistrationPage: NextPage = () => {
 
+    const router = useRouter()
+
     const [otp, setOtp] = useState<string>("")
     const [verificationId, setVerificationId] = useState<string>("")
+    const [username, setUsername] = useState<string>("")
     const [error, setError] = useState<ErrorResponse>()
+    const [isSucessRegistration, setIsSucessRegistration] = useState<boolean>()
 
 
-    useEffect(() => {
+    const handleRegistration = async (e: SyntheticEvent) => {
+
+        e.stopPropagation();
+        e.preventDefault();
 
         registerUser()
-            .then(res => setVerificationId(res.data.verificationId))
-            .catch(err  => {
+            .then(res => {
+
+                if (res.status == "success") {
+
+                    setVerificationId(res.verificationId);
+                    setIsSucessRegistration(true);
+                }
+            })
+            .catch(err => {
 
                 const errorData = err?.response?.data as ErrorResponse
                 setError(errorData)
@@ -51,20 +66,20 @@ const RegistrationPage: NextPage = () => {
 
             })
 
-    }, [])
+    }
 
- 
+
     const registerUser = async () => {
 
-  /*       The password length must be greater than or equal to 8 and lower thant 26</p>
-     * <p>The password must contain one or more uppercase characters</p>
-     * <p>The password must contain one or more lowercase characters</p>
-     * <p>The password must contain one or more numeric values</p>
-     * <p>The password must contain one or more special characters</p> */
+        /*       The password length must be greater than or equal to 8 and lower thant 26</p>
+           * <p>The password must contain one or more uppercase characters</p>
+           * <p>The password must contain one or more lowercase characters</p>
+           * <p>The password must contain one or more numeric values</p>
+           * <p>The password must contain one or more special characters</p> */
 
         const data = {
 
-            username: "694567219",
+            username: username,
             password: "7R8Hvqvgz@jd#dhcv9", // 
             deviceName: "(Windows NT 10.0; Win64; x64)",
             deviceId: "uuid4",
@@ -76,16 +91,30 @@ const RegistrationPage: NextPage = () => {
 
         }
 
-        return await client.post<RegisterResponse>('http://localhost:9000/api/v0/web/register', data, {})
+        // route /api/** don't allowcredentials, we use simple axios client
+
+        return (await axios.post<RegisterResponse>(baseUrl + '/api/v0/web/register', data, {})).data
     }
+
+    const getRedirect = () => {
+
+		const redirect = getCookie('redirect')
+		if (redirect) {
+			deleteCookie('redirect')
+			return redirect.toString()
+		}
+
+		return '/'
+	}
+
 
 
     const validateOtp = async (e: SyntheticEvent) => {
 
-        e.stopPropagation()
-        e.preventDefault()
+        e.stopPropagation();
+        e.preventDefault();
 
-        var body = new FormData();
+        const body = new FormData();
         body.append('verificationId', verificationId);
         body.append('verificationCode', otp);
 
@@ -96,10 +125,36 @@ const RegistrationPage: NextPage = () => {
             }
         }
 
-        const res = await client.post('http://localhost:9000/api/otp/verify', body, config)
+        // important for retrieve cookie
+        // route /web/**  allowcredentials, we use custom axios client
 
-        console.log(res)
-        return res;
+        client.post(baseUrl + '/web/otp/verify', body, config)
+            .then(res => res.data)
+            .then(data => {
+
+                console.log(data);
+
+                if (data?.redirect) {
+                    window.location.href = data?.redirect
+                }
+                else {
+
+                    router.push(getRedirect()); 
+                }
+
+            })
+            .catch(err => {
+
+                const errorData = err?.response?.data as ErrorResponse
+                setError(errorData);
+                console.log(errorData);
+
+            })
+
+
+        //setCookie("redirect", res?.data?.redirect)
+        //signIn("yowyob");
+
     }
 
 
@@ -111,12 +166,36 @@ const RegistrationPage: NextPage = () => {
                         Registration
                     </div>
                     <div className="relative mb-6" data-te-input-wrapper-init>
-                        <input onChange={txt => setOtp(txt.target.value)}
+                        <input onChange={event => setUsername(event.target.value)}
                             type="number"
                             className="peer  block min-h-[auto] w-full rounded border-2 bg-transparent px-3 py-[0.2rem] leading-[1.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 data-[te-input-state-active]:placeholder:opacity-100 motion-reduce:transition-none dark:text-neutral-200 dark:placeholder:text-neutral-200 [&:not([data-te-input-placeholder-active])]:placeholder:opacity-0"
                             id="exampleFormControlInput33"
                             placeholder="Password" />
-                        <p className="text-red text-red-500 text-xs italic">Please enter otp.</p>
+
+                        {isSucessRegistration && <p className="text-green text-bold text-green-500 text-xs italic">Sucess Registration</p>}
+
+                    </div>
+                    <Button onClick={(event) => handleRegistration(event)}
+                        className="inline-block w-full rounded bg-primary px-7 pb-2.5 pt-3 text-sm font-medium uppercase leading-normal text-white shadow-[0_4px_9px_-4px_#3b71ca] transition duration-150 ease-in-out hover:bg-primary-600 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:bg-primary-600 focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:outline-none focus:ring-0 active:bg-primary-700 active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] dark:shadow-[0_4px_9px_-4px_rgba(59,113,202,0.5)] dark:hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]"
+                        data-te-ripple-init
+                        data-te-ripple-color="light">
+                        Create Account
+                    </Button>
+                    <div className=" fw-semibold">
+                        {error?.error}
+                    </div>
+                    <div className="fs-4 fw-semibold">
+                        Validation
+                    </div>
+                    <div className="relative mb-6" data-te-input-wrapper-init>
+                        <input onChange={event => setOtp(event.target.value)}
+                            type="number"
+                            className="peer  block min-h-[auto] w-full rounded border-2 bg-transparent px-3 py-[0.2rem] leading-[1.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 data-[te-input-state-active]:placeholder:opacity-100 motion-reduce:transition-none dark:text-neutral-200 dark:placeholder:text-neutral-200 [&:not([data-te-input-placeholder-active])]:placeholder:opacity-0"
+                            id="exampleFormControlInput33"
+                            placeholder="Password" />
+
+                        {error && <p className="text-red text-red-500 text-xs italic">Invalid OTP</p>}
+
                     </div>
                     <Button onClick={(event) => validateOtp(event)}
                         className="inline-block w-full rounded bg-primary px-7 pb-2.5 pt-3 text-sm font-medium uppercase leading-normal text-white shadow-[0_4px_9px_-4px_#3b71ca] transition duration-150 ease-in-out hover:bg-primary-600 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:bg-primary-600 focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:outline-none focus:ring-0 active:bg-primary-700 active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] dark:shadow-[0_4px_9px_-4px_rgba(59,113,202,0.5)] dark:hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]"
@@ -127,6 +206,13 @@ const RegistrationPage: NextPage = () => {
                     <div className=" fw-semibold">
                         {error?.error}
                     </div>
+
+                    <Button onClick={(event) => signIn("yowyob")}
+                        className="inline-block w-full mt-10 rounded bg-primary px-7 pb-2.5 pt-3 text-sm font-medium uppercase leading-normal text-white shadow-[0_4px_9px_-4px_#3b71ca] transition duration-150 ease-in-out hover:bg-primary-600 hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:bg-primary-600 focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] focus:outline-none focus:ring-0 active:bg-primary-700 active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.3),0_4px_18px_0_rgba(59,113,202,0.2)] dark:shadow-[0_4px_9px_-4px_rgba(59,113,202,0.5)] dark:hover:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:focus:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)] dark:active:shadow-[0_8px_9px_-4px_rgba(59,113,202,0.2),0_4px_18px_0_rgba(59,113,202,0.1)]"
+                        data-te-ripple-init
+                        data-te-ripple-color="light">
+                        OAuth Login
+                    </Button>
                 </div>
             </Card>
         </div>

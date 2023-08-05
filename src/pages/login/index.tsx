@@ -1,5 +1,5 @@
 import { Button, TextInput } from "@tremor/react";
-import { SyntheticEvent, useState } from "react";
+import { SyntheticEvent, useCallback, useState } from "react";
 import axios from 'axios';
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
@@ -8,6 +8,14 @@ import { useRouter } from "next/router";
 
 const jar = new CookieJar(); 
 const client = wrapper(axios.create({jar: jar, withCredentials: true}))
+
+
+
+
+const baseUrl = "http://88.198.150.195:8099/AUTH-SERVICE"
+
+
+
 
 
 const LoginPage: React.FC = () => {
@@ -33,9 +41,27 @@ const LoginPage: React.FC = () => {
 	}
 
 
+	const onSubmit = useCallback(async (e: { preventDefault: () => void, message:string }) => {
+		e.preventDefault();
+		try {
+		  await fetch("/api/user/password/reset", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+			  email: "email",
+			}),
+		  });
+		} catch (e) {
+		  console.error(e);
+		}
+	  }, []);
+
+
 
 
 	const login = async (e: SyntheticEvent) => {
+
+		
 
 		e.stopPropagation()
 		e.preventDefault() 
@@ -88,7 +114,7 @@ const LoginPage: React.FC = () => {
 		//client.defaults.headers.common["X-XSRF-TOKEN"] = csrf!.toString()
 		//client.defaults.headers["X-XSRF-TOKEN"] = csrf!.toString()
 
-		const res = await client.post('http://localhost:9000/api/login', body, config)
+		const res = await client.post(baseUrl + '/web/login', body, config)
 	 
 		if (res.status === 200) { 
 
@@ -99,10 +125,7 @@ const LoginPage: React.FC = () => {
 				}
 			}
 
-			console.log(config2)
-
-			const user = await client.get('http://localhost:9000/api/v0/userinfo', config2)
-			console.log(user)
+			console.log(res.data?.redirect)
 
 			router.push(getRedirect())
 		}

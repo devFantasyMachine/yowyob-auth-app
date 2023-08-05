@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { useSession, signIn, signOut } from "next-auth/react"
 
 type Middleware = (request: NextRequest) => NextResponse
 
@@ -19,7 +20,8 @@ const authenticated: Middleware = (request) => {
   const authSession = request.cookies.get('yys')?.value
 
   if (!authSession) {
-    const response = NextResponse.redirect(new URL('/login', request.url))
+
+    const response = NextResponse.redirect(new URL('/register', request.url))
     response.cookies.set({
       name: 'redirect',
       value: request.url,
