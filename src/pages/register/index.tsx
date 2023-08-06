@@ -37,8 +37,9 @@ const RegistrationPage: NextPage = () => {
 
     const router = useRouter()
 
-    const [otp, setOtp] = useState<string>("")
+    const [verificationCode, setVerificationCode] = useState<string>("")
     const [verificationId, setVerificationId] = useState<string>("")
+
     const [username, setUsername] = useState<string>("")
     const [error, setError] = useState<ErrorResponse>()
     const [isSucessRegistration, setIsSucessRegistration] = useState<boolean>()
@@ -49,6 +50,8 @@ const RegistrationPage: NextPage = () => {
         e.stopPropagation();
         e.preventDefault();
 
+        setIsSucessRegistration(undefined);
+
         registerUser()
             .then(res => {
 
@@ -56,6 +59,7 @@ const RegistrationPage: NextPage = () => {
 
                     setVerificationId(res.verificationId);
                     setIsSucessRegistration(true);
+                    console.log(verificationId)
                 }
             })
             .catch(err => {
@@ -71,7 +75,7 @@ const RegistrationPage: NextPage = () => {
 
     const registerUser = async () => {
 
-        /*       The password length must be greater than or equal to 8 and lower thant 26</p>
+        /* The password length must be greater than or equal to 8 and lower thant 26</p>
            * <p>The password must contain one or more uppercase characters</p>
            * <p>The password must contain one or more lowercase characters</p>
            * <p>The password must contain one or more numeric values</p>
@@ -116,7 +120,7 @@ const RegistrationPage: NextPage = () => {
 
         const body = new FormData();
         body.append('verificationId', verificationId);
-        body.append('verificationCode', otp);
+        body.append('verificationCode', verificationCode);
 
         const config = {
 
@@ -145,6 +149,7 @@ const RegistrationPage: NextPage = () => {
             })
             .catch(err => {
 
+                console.log(err);
                 const errorData = err?.response?.data as ErrorResponse
                 setError(errorData);
                 console.log(errorData);
@@ -181,14 +186,14 @@ const RegistrationPage: NextPage = () => {
                         data-te-ripple-color="light">
                         Create Account
                     </Button>
-                    <div className=" fw-semibold">
+                    <div className="fw-semibold text-red text-red-500">
                         {error?.error}
                     </div>
                     <div className="fs-4 fw-semibold">
                         Validation
                     </div>
                     <div className="relative mb-6" data-te-input-wrapper-init>
-                        <input onChange={event => setOtp(event.target.value)}
+                        <input onChange={event => setVerificationCode(event.target.value)}
                             type="number"
                             className="peer  block min-h-[auto] w-full rounded border-2 bg-transparent px-3 py-[0.2rem] leading-[1.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 data-[te-input-state-active]:placeholder:opacity-100 motion-reduce:transition-none dark:text-neutral-200 dark:placeholder:text-neutral-200 [&:not([data-te-input-placeholder-active])]:placeholder:opacity-0"
                             id="exampleFormControlInput33"
@@ -203,7 +208,7 @@ const RegistrationPage: NextPage = () => {
                         data-te-ripple-color="light">
                         Submit code
                     </Button>
-                    <div className=" fw-semibold">
+                    <div className="fw-semibold text-red text-red-500">
                         {error?.error}
                     </div>
 
