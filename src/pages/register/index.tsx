@@ -17,9 +17,12 @@ const jar = new CookieJar(); // allow to retrieve session cookie
 const client = wrapper(axios.create({ jar: jar, withCredentials: true }))
 
 
-const baseUrl = "http://88.198.150.195:8099/AUTH-SERVICE"
+const baseUrl = "https://proxy.yowyob.com/AUTH-SERVICE"
+
+//const baseUrl = "http://localhost:8090"
 
 
+ 
 type RegisterResponse = {
 
     verificationId: string,
@@ -27,11 +30,13 @@ type RegisterResponse = {
 
 }
 
+
 type ErrorResponse = {
 
     error: string, // user already exists, too many request, 
     message: string,
 }
+
 
 const RegistrationPage: NextPage = () => {
 
@@ -83,7 +88,8 @@ const RegistrationPage: NextPage = () => {
 
         const data = {
 
-            username: username,
+            //username: username,
+            username: "cteuboutonzong@gmail.com",
             password: "7R8Hvqvgz@jd#dhcv9", // 
             deviceName: "(Windows NT 10.0; Win64; x64)",
             deviceId: "uuid4",
@@ -91,7 +97,7 @@ const RegistrationPage: NextPage = () => {
             userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
             deviceModel: "windows",
             deviceManufacturer: "windows",
-            usernameType: "PHONE", // Or EMAIL
+            usernameType: "EMAIL", // PHONE Or EMAIL
 
         }
 
@@ -132,7 +138,7 @@ const RegistrationPage: NextPage = () => {
         // important for retrieve cookie
         // route /web/**  allowcredentials, we use custom axios client
 
-        client.post(baseUrl + '/web/otp/verify', body, config)
+        axios.post(baseUrl + '/web/otp/verify', body, config)
             .then(res => res.data)
             .then(data => {
 
@@ -188,6 +194,7 @@ const RegistrationPage: NextPage = () => {
                     </Button>
                     <div className="fw-semibold text-red text-red-500">
                         {error?.error}
+                        {error?.message}
                     </div>
                     <div className="fs-4 fw-semibold">
                         Validation
@@ -210,6 +217,7 @@ const RegistrationPage: NextPage = () => {
                     </Button>
                     <div className="fw-semibold text-red text-red-500">
                         {error?.error}
+                        {error?.message}
                     </div>
 
                     <Button onClick={(event) => signIn("yowyob")}
