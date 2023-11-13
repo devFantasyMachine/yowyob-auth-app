@@ -88,16 +88,16 @@ const RegistrationPage: NextPage = () => {
 
         const data = {
 
-            //username: username,
-            username: "cteuboutonzong@gmail.com",
+            username: username,
+            //username: "cteuboutonzong@gmail.com",
             password: "7R8Hvqvgz@jd#dhcv9", // 
             deviceName: "(Windows NT 10.0; Win64; x64)",
             deviceId: "uuid4",
             deviceOs: "WEB",
-            userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            userAgent: window.navigator.userAgent,
             deviceModel: "windows",
             deviceManufacturer: "windows",
-            usernameType: "EMAIL", // PHONE Or EMAIL
+            usernameType: "PHONE", // PHONE Or EMAIL
 
         }
 
@@ -105,6 +105,8 @@ const RegistrationPage: NextPage = () => {
 
         return (await axios.post<RegisterResponse>(baseUrl + '/api/v0/web/register', data, {})).data
     }
+
+
 
     const getRedirect = () => {
 

@@ -12,7 +12,11 @@ const client = wrapper(axios.create({jar: jar, withCredentials: true}))
 
 
 
-const baseUrl = "http://88.198.150.195:8099/AUTH-SERVICE"
+//const baseUrl = "http://88.198.150.195:8099/AUTH-SERVICE"
+
+
+
+const baseUrl = "http://localhost:8090"
 
 
 
@@ -61,23 +65,21 @@ const LoginPage: React.FC = () => {
 
 	const login = async (e: SyntheticEvent) => {
 
-		
-
 		e.stopPropagation()
 		e.preventDefault() 
 
-		var body = new FormData();
-		body.append('username', username);
-		body.append('password', password);
-		body.append('deviceId', "uuid4");
-		body.append('deviceOs', "windows");
-		body.append('userAgent', "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
-		body.append('deviceModel', "windows");
-		body.append('deviceManufacturer', "windows");
+		const data = new FormData();
+		data.append('username', username);
+		data.append('password', password);
+		data.append('deviceId', "uuid4");
+		data.append('deviceOs', "windows");
+		data.append('userAgent', window.navigator.userAgent);
+		data.append('deviceModel', "windows");
+		data.append('deviceManufacturer',  "windows");
+
+
 
 		//setSubmitting(true)
-
-		const csrf = getCookie('XSRF-TOKEN')  
 
 		//const token = await client.get('http://172.16.23.14:9000/web/csrf')
 			//console.log(token.data)
@@ -102,8 +104,6 @@ const LoginPage: React.FC = () => {
 			return;		
 		} */
 
-		console.log(csrf)
-
 		const config = {
 
 			headers: {
@@ -114,22 +114,16 @@ const LoginPage: React.FC = () => {
 		//client.defaults.headers.common["X-XSRF-TOKEN"] = csrf!.toString()
 		//client.defaults.headers["X-XSRF-TOKEN"] = csrf!.toString()
 
-		const res = await client.post(baseUrl + '/web/login', body, config)
+		const res = await axios.post(baseUrl + '/web/login', data, config)
+		console.log(res.data)
 	 
-		if (res.status === 200) { 
-
-			const config2 = {
-
-				headers: { 
-					"yys": getCookie("yys"),
-				}
-			}
-
+/* 		if (res.status === 200) { 
+ 
 			console.log(res.data?.redirect)
 
 			router.push(getRedirect())
 		}
-
+ */
 		//setSubmitting(false)
 	}
 
